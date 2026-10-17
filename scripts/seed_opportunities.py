@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from sqlalchemy.orm import Session
+from datetime import date
 from app.db.session import SessionLocal, engine
 from app.models import Base, Opportunity
 
@@ -13,14 +13,19 @@ def load_dataset():
 
 def seed():
     Base.metadata.create_all(bind=engine)
-    db: Session = SessionLocal()
+    db = SessionLocal()
     try:
-        # Check if already seeded
         if db.query(Opportunity).count() > 0:
             print("Already seeded")
             return
         data = load_dataset()
         for item in data.get("opportunities", []):
+            deadline = None
+            if item.get("application_deadline"):
+                try:
+                    deadline = date.fromisoformat(str(item["application_deadline"]))
+                except Exception:
+                    deadline = None
             opp = Opportunity(
                 external_id=item.get("external_id"),
                 title=item["title"],
@@ -38,14 +43,14 @@ def seed():
                 internet_requirements=item.get("internet_requirements"),
                 official_source_url=item.get("official_source_url"),
                 application_url=item.get("application_url"),
-                application_deadline=item.get("application_deadline") if item.get("application_deadline") else None,
-                is_individual_opportunity=item.get("is_individual_opportunity", True),
+                application_deadline=deadline,
+                is_individual_opportunity=bool(item.get("is_individual_opportunity", True)),
                 verification_status=item.get("verification_status"),
                 last_verified=item.get("last_verified"),
             )
             db.add(opp)
         db.commit()
-        print("Seeded successfully")
+        print(f"Seeded {len(data.get('opportunities', []))} opportunities")
     finally:
         db.close()
 

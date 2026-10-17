@@ -3,13 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from app.db.session import get_db
 from app.repositories.opportunity_repository import OpportunityRepository
-from app.schemas.opportunity import OpportunityRead
 from app.services.recommendation_service import recommend
 
-router = APIRouter(prefix="/recommendations", tags=["recommendations"])
+router = APIRouter(tags=["recommendations"])
 
 
-@router.post("")
+@router.post("/recommendations")
 def get_recommendations(payload: Dict[str, Any], db: Session = Depends(get_db)):
     student = payload.get("student_profile", payload)
     repo = OpportunityRepository(db)
@@ -18,9 +17,8 @@ def get_recommendations(payload: Dict[str, Any], db: Session = Depends(get_db)):
     return {"recommendations": recs}
 
 
-@router.get("/students/{student_id}")
+@router.get("/students/{student_id}/recommendations")
 def get_student_recommendations(student_id: str, db: Session = Depends(get_db)):
-    # Demo mode
     student = {
         "id": student_id,
         "display_name": "Demo Student",
